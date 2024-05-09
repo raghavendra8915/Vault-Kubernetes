@@ -1,0 +1,58 @@
+Get the yaml template for example:
+  " wget https://raw.githubusercontent.com/fabianlee/blogcode/master/vault/tiny-tools-kubernetes-auth-and-sidecar.yaml "
+
+
+#setup variables
+export app=tiny-tools-mytest-vault
+export namespace_k8s=$vault_ns
+export service_account_k8s=vault-auth
+export vault_role=myrole
+export vault_secret_path=secret/webapp/config
+
+
+# show rendered template
+cat tiny-tools-kubernetes-auth-and-sidecar.yaml | DOLLAR_SIGN='$' envsubst
+
+# apply rendered template to cluster
+cat tiny-tools-kubernetes-auth-and-sidecar.yaml | DOLLAR_SIGN='$' envsubst | kubectl apply -f - -n vault
+
+
+#Annotations:
+agent-inject enables the Vault Agent Injector service
+role is the Vault Kubernetes authentication role
+agent-inject-secret-FILEPATH prefixes the path of the secret file present in the vault to be injected.
+ vault.hashicorp.com/auth-type: 'kubernetes' – kubernetes is the auth type 
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/agent-init-first: 'false'
+        vault.hashicorp.com/agent-cache-enable: 'true'
+        vault.hashicorp.com/auth-type: 'kubernetes'
+        vault.hashicorp.com/agent-inject-secret-helloworld: "secret/webapp/config"
+        vault.hashicorp.com/auth-config-path: '/var/run/secrets/kubernetes.io/serviceaccount/token'
+        vault.hashicorp.com/remove-jwt-after-reading : 'false'
+        vault.hashicorp.com/auth-path: auth/kubernetes
+        vault.hashicorp.com/role: $vault_role
+        #vault.hashicorp.com/namespace: $names
+
+
+After the deployment of the application. If we get the pods of application deployment. We can see that two containers are deployed as seen in the below screenshot.
+
+ " kubectl get pod/tiny-tools-mytest-vault-5bf5b7c4dd-sb9ln -n vault -o="custom-columns=NAME:.metadata.name,INIT-CONTAINERS:.spec.initContainers[*].name,CONTAINERS:.spec.containers[*].name" "
+
+
+Validate secret from Kubernetes pod:
+From Vault sidecar
+From the Vault sidecar you can use the ‘vault’ CLI utilty to fetch the secret.
+ " kubectl exec -it deployment/$app -n vault -c vault-agent -- /bin/sh -c "VAULT_ADDR=http://localhost:8200 vault kv get $vault_secret_path" "
+
+From application container:
+From the main application container we can use curl to request the secret from the local Vault sidecar which listens on port 8200.
+  " kubectl exec -it deployment/$app -n vault -c tiny-tools -- curl -X GET http://localhost:8200/v1/secret/data/webapp/config "
+
+
+
+Secret written to app container as file:
+Our annotation “vault.hashicorp.com/agent-inject-secret-mysecret.txt” is requesting that a file be created named “mysecret.txt”.  We can verify the secret was rendered to that file inside our container.  
+        " kubectl exec -it deployment/$app -n vault -c tiny-tools -- cat /vault/secrets/mysecret.txt "
+
+
+
