@@ -1,0 +1,27 @@
+Enable Vault Kubernetes Authentication Method:
+For Kubernetes pods to interact with Vault and get the secrets, it needs a vault token. The kubernetes auth method with the pod service account makes it easy for pods to retrieve secrets from the vault.
+
+In this way, any pod which has been assigned the “vault” as the service account – will be able to read these secrets without requiring any vault token.
+
+We will exec into the vault pod  to enable kubernetes authentication mode, then apply its configuration parameters.
+   "Kubectl exec -it podname -n namespace – vault auth enable kubernetes"
+
+Create a Policy
+By default, the secret path has the deny policy enabled. We need to explicitly add a policy to read/write/delete the secrets.
+The following policy dictates that the entity be allowed the read operation for secrets stored under “my-policy“. Execute it to create the policy
+               
+          """         vault policy write mypolicy - <<EOH
+                   path "secret/data/webapp/config" {
+                   capabilities = ["read"]
+                    }
+                  EOH     """
+
+create role:
+   " vault write auth/kubernetes/role/myrole policies=mypolicy ttl=15m bound_service_account_names=vault-auth bound_service_account_namespaces=vault "
+
+This role should be assigned to service account.
+
+
+
+
+
