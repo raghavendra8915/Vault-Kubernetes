@@ -1,0 +1,24 @@
+Initialize the Vault:
+
+Initialization is the process by which Vault’s storage starts preparation to receive data.
+Vault generates an in-memory master key and applies Shamir’s secret sharing algorithm to disassemble that master key into multiple keys. These keys are called “unseal keys”.
+So to initialize the vault, first, we need to unseal the vault using the unseal keys.
+
+exec into the pod  
+-----------  kubectl exec -it pod/vault-1713784349-0 -n vault -- sh and run the command     ‘vault operator init’ to initialize the vault.
+
+Copy these values into a hardened and secure location on your local system, they will not be output again.
+
+Unseal the Vault: 
+Then run the unseal command below until the key threshold is reached (default is 3).
+--------- vault operator unseal
+
+
+After the successful completion of unseal, then we are good to login into the vault using the root token.
+
+-------  vault login
+
+
+Now, we will port-forward to the Vault-UI service to access from the browser.
+------ kubectl port-forward service/vault-ui 8200:8200 -n vault 
+
