@@ -1,0 +1,18 @@
+Install Vault in Kubernetes using Helm Charts:
+--------  Helm search repo list
+--------  Helm pull hashicorp/vault –untar(Pulling into our local system)
+
+As we are deploying Vault as statefulsets, we need a storage part to persist the data. Hence, we created the storage class(ebs-sc) and modified the values.yaml accordingly.
+Here,storageClass is the name of the storageClass which we created in the cluster.
+
+To Access the Vault from browser, Modifications are needed in Values.yaml i.e “ui.enabled” should be set to ‘true’
+
+Once Modifications are done accordingly, then we should uninstall the existing installed vault and re-install the Vault with custom modifications.
+ ---------  Helm install vault -f vault/vaules.yaml -n vault --generate-name
+
+Check the status of vault is installed or not:
+ ---------- helm status vault-1713780879 -n vault (-n vault - followed by namespace)
+
+We can validate installation by running the below command.
+----------   Kubectl get all -n vault
+
